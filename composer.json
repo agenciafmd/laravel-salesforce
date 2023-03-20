@@ -1,0 +1,32 @@
+{
+    "name": "agenciafmd/laravel-saleforce",
+    "description": "Integração com a Salesforce",
+    "homepage": "https://github.com/agenciafmd/laravel-salesforce",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Milena Ramiro",
+            "email": "milena.ramiro@fmd.ag",
+            "homepage": "https://fmd.ag/",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "laravel/framework": "6.*|7.*|8.*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Agenciafmd\\Salesforce\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Agenciafmd\\Salesforce\\Providers\\SalesforceServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true
+    }
+}
