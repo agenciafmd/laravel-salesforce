@@ -34,7 +34,7 @@ class SendConversionsToSalesforce implements ShouldQueue
         $client = $this->getClientRequest();
 
         $client->request('POST', config('laravel-salesforce.public_api_url'), [
-            'form_params' => $this->data,
+            'form_params' => [ $this->data ],
         ]);
     }
 
