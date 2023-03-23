@@ -11,6 +11,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Http;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 
@@ -31,11 +32,7 @@ class SendConversionsToSalesforce implements ShouldQueue
             return false;
         }
 
-        $client = $this->getClientRequest();
-
-        $client->request('POST', config('laravel-salesforce.public_api_url'), [
-            'form_params' => [ $this->data ],
-        ]);
+        $response = Http::post(config('laravel-salesforce.public_api_url'),  $this->data);
     }
 
     private function getClientRequest()
