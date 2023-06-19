@@ -31,8 +31,9 @@ class SendConversionsToSalesforce implements ShouldQueue
     public function handle()
     {
         if (! config('laravel-salesforce.public_api_url')) {
-            return;
+            return false;
         }
+
         if (config('laravel-salesforce.public_api_auth')
             && config('laravel-salesforce.username')
             && config('laravel-salesforce.password')
@@ -41,11 +42,10 @@ class SendConversionsToSalesforce implements ShouldQueue
             $this->getAccessToken();
         }
 
-
         $client = $this->getClientRequest();
         $endpoint = config('laravel-salesforce.public_api_url');
 
-        $client->request('POST', $endpoint, [
+        $response = $client->request('POST', $endpoint, [
             'headers' => [
                 'Accept' => 'application/json',
                 'Authorization' => 'Bearer ' . $this->access_token
