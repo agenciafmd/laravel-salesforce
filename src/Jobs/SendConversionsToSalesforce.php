@@ -13,6 +13,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Http;
 use Monolog\Handler\StreamHandler;
+use Illuminate\Support\Facades\Cache;
 use Monolog\Logger;
 
 class SendConversionsToSalesforce implements ShouldQueue
@@ -20,6 +21,7 @@ class SendConversionsToSalesforce implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     protected $data;
+    protected $access_token;
 
     public function __construct(array $data = [])
     {
@@ -28,11 +30,58 @@ class SendConversionsToSalesforce implements ShouldQueue
 
     public function handle()
     {
-        if (!config('laravel-salesforce.public_api_url')) {
-            return false;
+        if (! config('laravel-salesforce.public_api_url')) {
+            return;
+        }
+        if (config('laravel-salesforce.public_api_auth')
+            && config('laravel-salesforce.username')
+            && config('laravel-salesforce.password')
+            && config('laravel-salesforce.client_id')
+            && config('laravel-salesforce.client_secret')) {
+            $this->getAccessToken();
         }
 
-        $response = Http::post(config('laravel-salesforce.public_api_url'),  $this->data);
+
+        $client = $this->getClientRequest();
+        $endpoint = config('laravel-salesforce.public_api_url');
+
+        $client->request('POST', $endpoint, [
+            'headers' => [
+                'Accept' => 'application/json',
+                'Authorization' => 'Bearer ' . $this->access_token
+            ],
+            'json' => $this->data
+        ]);
+    }
+
+    private function getAccessToken()
+    {
+        if (isset($this->access_token)) {
+            return;
+        }
+
+        $client = $this->getClientRequest();
+        $endpoint = config('laravel-salesforce.public_api_auth');
+        $formParams = [
+            'username' => config('laravel-salesforce.username'),
+            'password' => config('laravel-salesforce.password'),
+            'grant_type' => 'password',
+            'client_id' => config('laravel-salesforce.client_id'),
+            'client_secret' => config('laravel-salesforce.client_secret'),
+        ];
+
+        $this->access_token = Cache::remember('access_token', now()->addHours(1),
+            function () use ($client, $endpoint, $formParams) {
+                $response = $client->request('POST', $endpoint, [
+                    'headers' => [
+                        'Content-Type' => 'application/x-www-form-urlencoded'
+                    ],
+                    'form_params' => $formParams
+                ]);
+
+                $responseBody = json_decode($response->getBody());
+                return $responseBody->access_token;
+            });
     }
 
     private function getClientRequest()

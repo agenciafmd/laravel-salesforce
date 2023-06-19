@@ -20,7 +20,17 @@ Por isso, é necessário colocar o endereço no nosso .env
 ```dotenv
 SALESFORCE_API_URL=https://agenciafmd.secure.force.com/services/apexrest/LeadConnector
 ```
+Caso seja necessária a autenticação, é necessário colocar fornecer os dados no nosso .env
 
+```dotenv
+SALESFORCE_API_AUTH=https://seu-endereco-para-gerar-token.sandbox.my.salesforce.com/services/oauth2/token
+SALESFORCE_USERNAME=username@email.com
+SALESFORCE_PASSWORD=sua_senha
+SALESFORCE_CLIENT_ID=seu_client_id
+SALESFORCE_CLIENT_SECRET=seu_client_secret
+```
+
+```dotenv
 ## Uso
 
 Envie os campos no formato de array para o SendConversionsToSalesforce.
