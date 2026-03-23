@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 return [
     'public_api_url' => env('SALESFORCE_API_URL', ''),
     'public_api_auth' => env('SALESFORCE_API_AUTH', ''),

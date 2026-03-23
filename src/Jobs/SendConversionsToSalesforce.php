@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Agenciafmd\Salesforce\Jobs;
 
 use GuzzleHttp\Client;
@@ -11,24 +13,22 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Http;
-use Monolog\Handler\StreamHandler;
 use Illuminate\Support\Facades\Cache;
+use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 
-class SendConversionsToSalesforce implements ShouldQueue
+final class SendConversionsToSalesforce implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
 
-    protected $data;
-    protected $access_token;
+    protected ?string $accessToken = null;
 
-    public function __construct(array $data = [])
-    {
-        $this->data = $data;
-    }
+    public function __construct(protected array $data = []) {}
 
-    public function handle()
+    public function handle(): ?bool
     {
         if (! config('laravel-salesforce.public_api_url')) {
             return false;
@@ -44,19 +44,20 @@ class SendConversionsToSalesforce implements ShouldQueue
 
         $client = $this->getClientRequest();
         $endpoint = config('laravel-salesforce.public_api_url');
-
-        $response = $client->request('POST', $endpoint, [
+        $client->request('POST', $endpoint, [
             'headers' => [
                 'Accept' => 'application/json',
-                'Authorization' => 'Bearer ' . $this->access_token
+                'Authorization' => 'Bearer ' . $this->accessToken,
             ],
-            'json' => $this->data
+            'json' => $this->data,
         ]);
+
+        return null;
     }
 
-    private function getAccessToken()
+    private function getAccessToken(): void
     {
-        if (isset($this->access_token)) {
+        if ($this->accessToken !== null) {
             return;
         }
 
@@ -70,21 +71,22 @@ class SendConversionsToSalesforce implements ShouldQueue
             'client_secret' => config('laravel-salesforce.client_secret'),
         ];
 
-        $this->access_token = Cache::remember('access_token', now()->addHours(1),
-            function () use ($client, $endpoint, $formParams) {
+        $this->accessToken = Cache::remember('access_token', now()->addHour(),
+            static function () use ($client, $endpoint, $formParams) {
                 $response = $client->request('POST', $endpoint, [
                     'headers' => [
-                        'Content-Type' => 'application/x-www-form-urlencoded'
+                        'Content-Type' => 'application/x-www-form-urlencoded',
                     ],
-                    'form_params' => $formParams
+                    'form_params' => $formParams,
                 ]);
 
-                $responseBody = json_decode($response->getBody());
+                $responseBody = json_decode((string) $response->getBody());
+
                 return $responseBody->access_token;
             });
     }
 
-    private function getClientRequest()
+    private function getClientRequest(): Client
     {
         $logger = new Logger('Salesforce');
         $logger->pushHandler(new StreamHandler(storage_path('logs/salesforce-' . date('Y-m-d') . '.log')));
@@ -93,7 +95,7 @@ class SendConversionsToSalesforce implements ShouldQueue
         $stack->push(
             Middleware::log(
                 $logger,
-                new MessageFormatter("{method} {uri} HTTP/{version} {req_body} | RESPONSE: {code} - {res_body}")
+                new MessageFormatter('{method} {uri} HTTP/{version} {req_body} | RESPONSE: {code} - {res_body}')
             )
         );
 

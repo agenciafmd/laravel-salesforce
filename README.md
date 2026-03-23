@@ -8,7 +8,7 @@
 ## Instalação
 
 ```bash
-composer require agenciafmd/laravel-salesforce:dev-master
+composer require agenciafmd/laravel-salesforce:v12.x-dev
 ```
 
 ## Configuração
